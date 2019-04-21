@@ -37,8 +37,11 @@ const userSchema = new mongoose.Schema({
                 throw new Error("Password cannot contain word 'password")
             }
         }
-    }
-
+    },
+    addresses : [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Address' 
+    }]
 })
 
 // Secure user credentials while login
