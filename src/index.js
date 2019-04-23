@@ -34,6 +34,8 @@ app.post('/users/login', async (req, res) => {
         
     } catch (e) {
         res.status(404).send(e)
+        console.log(e);
+        
     }
 })
 
@@ -56,20 +58,42 @@ app.post('/addresses/:userid', async (req, res) => {
     }
 })
 
-// Delete user and address
-app.delete('/users/:userid', async (req, res) => {
+// Retrieve address
+app.get('/address/:userid', async(req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.userid)
-        if(!user){
-            throw new Error("unable to delete")
-            
-        }
-        await Address.deleteMany({owner: user._id}).exec()
-        res.send("delete successful")
+        const user = await User.find({_id: req.params.userid}).populate({path:'addresses', limit: 5}).exec()
+        res.send(user[0].addresses)
     } catch (e) {
-        res.send(e)
-        
+        res.status(404).send(e)
     }
+})
+
+// Edit address
+app.patch('/addresses/:addressid/:userid', async (req, res) => {
+    const updates = Object.keys(req.body)
+    const allowedUpdates = ['first_name', 'last_name', 'street', 'city', 'province', 'country', 'postal_code', 'phone']
+    const isValidOperation = updates.every(update => allowedUpdates.includes(update))
+
+     if(!isValidOperation) {
+        return res.status(400).send({err: "Invalid request!"})
+    }
+
+     try {
+        const address = await Address.findOne({_id: req.params.addressid, owner: req.params.userid})
+
+         if(!address){
+            return res.status(404).send("Update Request")
+        }
+
+        updates.forEach(update => address[update] = req.body[update])
+        await address.save()
+
+         res.send("Update succeeded")
+
+
+     } catch (e) {
+
+     }
 })
 
 // Delete address
@@ -89,6 +113,22 @@ app.delete("/addresses", async (req, res) => {
       res.status(200).send(address);
     } catch (e) {
       res.status(500).send(e);
+    }
+})
+
+// Delete user and address
+app.delete('/users/:userid', async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.userid)
+        if(!user){
+            throw new Error("unable to delete")
+            
+        }
+        await Address.deleteMany({owner: user._id}).exec()
+        res.send("delete successful")
+    } catch (e) {
+        res.send(e)
+        
     }
 })
 
