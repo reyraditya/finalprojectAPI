@@ -15,7 +15,7 @@ router.post('/addresses', (req, res) => {
 })
 
 // Get address
-router.get('/addresses/:userid', (req, res) => { // GET OWN TASKS BY USER ID
+router.get('/addresses/:userid', (req, res) => { 
     const sql = `SELECT * FROM addresses WHERE user_id = ?`
     const data = req.params.userid
 
@@ -50,9 +50,6 @@ router.patch('/addresses/:addressid', (req, res) => {
     })
 
 })
-
-
-
 
 
 module.exports = router
