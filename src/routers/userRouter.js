@@ -3,6 +3,10 @@ const bcrypt = require('bcryptjs');
 const isEmail = require('validator/lib/isEmail');
 const conn = require('../connection/connection.js')
 const {sendVerify} = require ('../email/nodemailer')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
+
 
 // Register new user
 router.post('/users', async (req, res) => {
@@ -120,8 +124,77 @@ router.get('/getusers/:email/:username', (req, res) => {
     })
 })
 
+// Upload images
+const uploadDir = path.join(__dirname + '/../avatar' )
+// console.log(__dirname);
 
+const avatarStorage = multer.diskStorage({
+    destination: function(req, file, cb){
+        cb(null, uploadDir)
+    },
+    filename: function(req, file, cb){
+        cb(null, Date.now() + file.fieldname + path.extname(file.originalname))
+    }
+})
 
+const upload = multer ({
+    storage: avatarStorage,
+    limits: {
+        fileSize: 10000000
+    },
+    fileFilter(req, file, cb){
+        if(!file.originalname.match(/\.(jpg|jpeg|png)$/)){ // will be error if the extension name is not one of these
+            return cb(new Error('Please upload image file (jpg, jpeg, or png)')) 
+        }
+        cb(undefined, true)
+    }
+})
+
+// Upload avatar
+router.post('/avatar', upload.single('avatar'), (req, res) => {
+    const sql = `select * from users where id = '${req.body.userid}'`
+    const sql2 = `update users set avatar = '${req.file.filename}' where username = '${req.body.username}'`
+    console.log(req.file);
+    
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        conn.query(sql2, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send({filename: req.file.filename})
+        })
+    })
+})
+
+// Get avatar
+router.get('/avatar/:photofile', (req, res) => {
+    res.sendFile(`${uploadDir}/${req.params.photofile}`)
+})
+
+// Delete avatar
+router.delete('/users/:username', (req,res) => {
+    const sql = `select * from users where username = ?`
+    const sql2 = `update users set avatar = NULL where username = ?`
+    const data = req.params.username
+    console.log(data);
+    
+    conn.query(sql, data, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        fs.unlink(`${uploadDir}/${result[0].avatar}`, (err) => {
+            if(err) throw err
+        })
+
+        conn.query(sql2, data, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
+})
+
+// 
 
 
 module.exports = router

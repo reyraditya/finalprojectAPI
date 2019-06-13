@@ -5,7 +5,7 @@ const path = require('path')
 const fs = require('fs')
 
 // Upload images
-const uploadDir = path.join(__dirname + '/../uploads/img' )
+const uploadDir = path.join(__dirname + '/../productimages' )
 // console.log(__dirname);
 
 const imgStorage = multer.diskStorage({
@@ -13,7 +13,7 @@ const imgStorage = multer.diskStorage({
         cb(null, uploadDir)
     },
     filename: function(req, file, cb){
-        cb(null, Date.now() + file.fieldname + path.extname(file.originalname))
+        cb(null, file.originalname)
     }
 })
 
@@ -30,63 +30,36 @@ const upload = multer ({
     }
 })
 
-// Post product
-router.post('/addproduct', (req, res) => {
-    // const {product_name, category, description, price} = req.body
-    const sql = `insert into products set ?`
-    const sql2 = `select * from products`
-    const data = req.body
+// Upload product images
+router.post('/addproduct', upload.single('image'), (req, res) => {
+    const {
+        product_name,
+        designer,
+        gender,
+        category,
+        description,
+        stock,
+        price
+    } = req.body
+    const sql = `insert into products set product_name='${product_name}', designer='${designer}', gender='${gender}', category='${category}', description='${description}', image='${req.file.filename}', stock='${stock}', price='${price}'`
+    // const sql2 = `set @product_id = (select max(id) from products)`
 
-    conn.query(sql, data, (err, result) => {
+    conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
+        
+        res.send(result)
 
-        conn.query(sql2, data, (err, result) => {
-            if(err) return res.send(err.sqlMessage)
-
-            res.send(result)
-        })
     })
 })
 
-// Post brand
-router.post('/addproduct/addbrand', (req, res) => {
-    const sql = `insert into brands set ?`
-    const sql2 = `select * from brands`
-    const data = req.body
-
-    conn.query(sql, data, (err, result) => {
-        if(err) return res.send(err.sqlMessage)
-
-        conn.query(sql2, data, (err, result) => {
-            if(err) return res.send(err.sqlMessage)
-
-            res.send(result)
-        })
-    })
+// Get products images
+router.get('/addproduct/addimages/:photofile', (req, res) => {
+    res.sendFile(`${uploadDir}/${req.params.photofile}`)
 })
 
-// Post stock
-router.post('/addproduct/addstock', (req, res) => {
-    const sql = `insert into stocks set ?`
-    const sql2 = `select * from stocks`
-    const data = req.body
-
-    conn.query(sql, data, (err, result) => {
-        if(err) return res.send(err.sqlMessage)
-
-        conn.query(sql2, data, (err, result) => {
-            if(err) return res.send(err.sqlMessage)
-
-            res.send(result)
-        })
-    })
-})
-
-// Get all products
+// Retrieve all products
 router.get('/allproducts', (req, res) => {
-    const sql = `select p.id, p.product_name, p.designer, p.category, p.description, sum(s.stock) as stock,                 p.price from products p
-                 join stocks s on p.id = s.product_id
-                 group by p.id, p.product_name, p.designer, p.category, p.description, p.price`
+    const sql = `select p.id, p.product_name, p.designer, p.gender, p.category, p.description, p.image, p.stock as stock, p.price from products p`
 
     conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
@@ -99,11 +72,7 @@ router.get('/allproducts', (req, res) => {
 router.delete('/deleteproducts/:productid', (req, res) => {
     const {productid} = req.params
     const sql = `delete from products where id = '${productid}'`
-    const sql2 = `select p.id, p.product_name, b.brand_name, p.category, p.description, si.size, s.stock,                    p.price from products p
-                  join brands b on p.id = b.product_id
-                  join stocks s on p.id = s.product_id
-                  join sizes si on s.size_id = si.id
-                  order by b.brand_name`
+    const sql2 = `select p.id, p.product_name, p.designer, p.category, p.description, p.stock,                               p.price from products p`
 
     conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
