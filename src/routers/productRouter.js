@@ -68,6 +68,79 @@ router.get('/allproducts', (req, res) => {
     })
 })
 
+// Retrieve products based on gender/category
+router.get('/allproduct/:gender/:category', (req, res) => {
+    if(req.params.category == 'allproducts'){
+        const sql = `select id, product_name, designer, category, description, image, stock, price from products where gender = '${req.params.gender}'`
+    
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+            res.send(result)
+        })
+    } else {
+        const sql = `select id, product_name, designer, category, description, image, stock, price from products where gender = '${req.params.gender}' and category = '${req.params.category}'`
+    
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+            res.send(result)
+        })
+    }
+})
+
+// Retrieve detail product
+router.get('/detailproduct/:productid', (req, res) => {
+    const sql = `select * from products where id = ${req.params.productid}`
+
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+        res.send(result)
+    })
+})
+
+// Retrieve all designers
+router.get('/designers', (req, res) => {
+    const sql = `select designer from products group by designer order by designer`
+
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+        res.send(result)
+    })
+})
+
+
+// Edit product
+router.patch('/editproduct/:productid', upload.single('image'), (req,res) => {
+    const {productid} = req.params
+    const {product_name, designer, gender, category, description, stock, price} = req.body
+    const sql = `select * from products where id = ${productid}`
+    console.log(req.file);
+    
+    if (req.file === undefined){
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err)
+
+            var image = result[0].image
+            const sql2 = `update products set product_name = '${product_name}', designer = '${designer}', gender = '${gender}', category='${category}', description = '${description}', image = '${image}', stock = ${stock}, price = ${price} where id = ${productid}`
+
+            conn.query(sql2, (err, result) => {
+                if(err) return (err.sqlMessage)
+
+                res.send(result)
+            })
+        })
+    } else {
+        const sql3 = `update products set product_name = '${product_name}', designer = '${designer}', gender = '${gender}', category='${category}', description = '${description}', image = '${req.file.filename}', stock = ${stock}, price = ${price} where id = ${productid}`
+
+        conn.query(sql3, (err, result) => {
+            if(err) return (err.sqlMessage)
+
+            res.send(result)
+        })
+        console.log(req.file.filename);
+        
+    }  
+})
+
 // Delete product by id
 router.delete('/deleteproducts/:productid', (req, res) => {
     const {productid} = req.params
@@ -84,6 +157,29 @@ router.delete('/deleteproducts/:productid', (req, res) => {
         })
     })
 })
+
+// Delete product image
+router.delete('/deleteimage/:productid', (req,res) => {
+    const sql = `select * from products where id = ?`
+    const sql2 = `update products set image = NULL where id = ?`
+    const data = req.params.productid
+    console.log(data);
+    
+    conn.query(sql, data, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        fs.unlink(`${uploadDir}/${result[0].image}`, (err) => {
+            if(err) throw err
+        })
+
+        conn.query(sql2, data, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
+})
+
 
 
 module.exports = router

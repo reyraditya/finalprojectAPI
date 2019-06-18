@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors')
 const userRouter = require('./routers/userRouter.js');
 const addressRouter = require('./routers/addressRouter');
-const productRouter = require('./routers/productRouter')
+const productRouter = require('./routers/productRouter');
+const cartwishRouter = require('./routers/cartwishRouter');
 
 
 const app = express()
@@ -13,6 +14,7 @@ app.use(cors())
 app.use(userRouter)
 app.use(addressRouter)
 app.use(productRouter)
+app.use(cartwishRouter)
 
 app.listen(port, () => {
     console.log('running at port ' + port);
