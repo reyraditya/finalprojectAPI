@@ -75,6 +75,18 @@ router.get('/cart/:userid', (req, res) => {
     })
 })
 
+// Add to wishlist from cart
+router.post('/addtowishlist/:cartwishid', (req, res) => {
+    const {cartwishid} = req.params
+    const sql = `update cartwish set status = 'w' where id = ${cartwishid}`
+
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        res.send(result)
+    })
+})
+
 
 
 

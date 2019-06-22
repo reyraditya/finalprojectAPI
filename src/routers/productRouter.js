@@ -30,7 +30,7 @@ const upload = multer ({
     }
 })
 
-// Upload product images
+// Upload product&images
 router.post('/addproduct', upload.single('image'), (req, res) => {
     const {
         product_name,
