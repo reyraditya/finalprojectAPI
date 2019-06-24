@@ -6,13 +6,29 @@ const fs = require('fs')
 
 // Retrieve orders for user
 router.get('/order/:userid', (req, res) => {
-    const sql = `select o.id, o.status, o.createdAt, o.price_total, o.payment_method, p.bank_name, p.iban,                  s.shipper_name, s.time_estimation from orders_user o
+    const sql = `select o.id, o.image, o.status, o.createdAt, o.price_total, o.payment_method, p.bank_name,                 p.iban, s.shipper_name, s.time_estimation from orders_user o
                  join payment p on o.bank_id = p.id
                  join shippers s on o.shipper_id = s.id
                  where o.user_id = ${req.params.userid} and o.status = 'waiting payment';`
 
     // console.log(req.params.userid);
     
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        res.send(result)
+    })
+})
+
+// Retrieve all orders for admin
+router.get('/allorders', (req, res) => {
+    const sql = `select o.id, o.image, o.status, o.createdAt, o.price_total, o.payment_method, u.id as userid, 
+                 u.username, u.email, p.bank_name, p.iban, s.shipper_name, s.time_estimation from orders_user o
+                 join users u on o.user_id = u.id
+                 join payment p on o.bank_id = p.id
+                 join shippers s on o.shipper_id = s.id
+                 order by o.status desc`
+
     conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
 
@@ -104,7 +120,7 @@ router.get('/order/:userid', (req, res) => {
             cb(null, uploadDir)
         },
         filename: function(req, file, cb){
-            cb(null, path.extname(file.originalname))
+            cb(null, file.originalname)
         }
     })
 
@@ -122,7 +138,7 @@ router.get('/order/:userid', (req, res) => {
     })
 
     router.post('/proof', upload.single('image'), (req, res) => {
-        const sql = `update orders_user set image = '${req.file.filename}' where id = ${req.body.orderid}`
+        const sql = `update orders_user set image = '${req.file.filename}' where id = ${req.body.id}`
 
         conn.query(sql, (err, result) => {
             if(err) return res.send(err.sqlMessage)
@@ -130,6 +146,11 @@ router.get('/order/:userid', (req, res) => {
             res.send(result)
         })
     })
+
+    // Get avatar
+    router.get('/proof/:photofile', (req, res) => {
+    res.sendFile(`${uploadDir}/${req.params.photofile}`)
+})
 
 
 module.exports = router
