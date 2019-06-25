@@ -9,7 +9,7 @@ router.get('/order/:userid', (req, res) => {
     const sql = `select o.id, o.image, o.status, o.createdAt, o.price_total, o.payment_method, p.bank_name,                 p.iban, s.shipper_name, s.time_estimation from orders_user o
                  join payment p on o.bank_id = p.id
                  join shippers s on o.shipper_id = s.id
-                 where o.user_id = ${req.params.userid} and o.status = 'waiting payment';`
+                 where o.user_id = ${req.params.userid}`
 
     // console.log(req.params.userid);
     
@@ -26,8 +26,7 @@ router.get('/allorders', (req, res) => {
                  u.username, u.email, p.bank_name, p.iban, s.shipper_name, s.time_estimation from orders_user o
                  join users u on o.user_id = u.id
                  join payment p on o.bank_id = p.id
-                 join shippers s on o.shipper_id = s.id
-                 order by o.status desc`
+                 join shippers s on o.shipper_id = s.id`
 
     conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
@@ -36,9 +35,54 @@ router.get('/allorders', (req, res) => {
     })
 })
 
+// // Retrieve orders with status PAID
+// router.get('/orderpaid', (req, res) => {
+//     const sql = `select o.id, o.image, o.status, o.createdAt, o.price_total, o.payment_method, u.id as userid, 
+//                 u.username, u.email, p.bank_name, p.iban, s.shipper_name, s.time_estimation from orders_user o
+//                 join users u on o.user_id = u.id
+//                 join payment p on o.bank_id = p.id
+//                 join shippers s on o.shipper_id = s.id
+//                 where o.status = 'paid'`
+
+//     conn.query(sql, (err, result) => {
+//         if(err) return res.send(err.sqlMessage)
+
+//         res.send(result)
+//     })
+// })
+
+// // Retrieve orders with status REJECTED
+// router.get('/orderrejected', (req, res) => {
+//     const sql = `select o.id, o.image, o.status, o.createdAt, o.price_total, o.payment_method, u.id as userid, 
+//                  u.username, u.email, p.bank_name, p.iban, s.shipper_name, s.time_estimation from orders_user o
+//                  join users u on o.user_id = u.id
+//                  join payment p on o.bank_id = p.id
+//                  join shippers s on o.shipper_id = s.id
+//                  where o.status = 'rejected'`
+    
+//     conn.query(sql, (err, result) => {
+//         if(err) return res.send(err.sqlMessage)
+
+//         res.send(result)
+//     })
+// })
+
 // Retrieve order details for (user and admin)
     router.get('/orderdetail/:orderid', (req, res) => {
         const sql = `select id, status, createdAt from orders_user where id = ${req.params.orderid}`
+
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
+
+// Retrieve user's credentials 
+    router.get('/userdetail/:orderid', (req, res) => {
+        const sql = `select u.id as userid, u.username, u.email from orders_user o
+                     join users u on u.id = o.user_id   
+                     where o.id = ${req.params.orderid}`
 
         conn.query(sql, (err, result) => {
             if(err) return res.send(err.sqlMessage)
@@ -149,8 +193,41 @@ router.get('/allorders', (req, res) => {
 
     // Get avatar
     router.get('/proof/:photofile', (req, res) => {
-    res.sendFile(`${uploadDir}/${req.params.photofile}`)
-})
+        res.sendFile(`${uploadDir}/${req.params.photofile}`)
+    })
+
+    // Button approval
+    router.patch('/statuspaid/:orderid', (req, res) => {
+        const sql = `update orders_user set status = 'paid' where id = ${req.params.orderid}`
+
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
+
+    // Button reject
+    router.patch('/statusrejected/:orderid', (req, res) => {
+        const sql = `update orders_user set status = 'rejected' where id = ${req.params.orderid}`
+
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
+
+    // Button shipped
+    router.patch('/statusshipped/:orderid', (req, res) => {
+        const sql = `update orders_user set status = 'shipped' where id = ${req.params.orderid}`
+
+        conn.query(sql, (err, result) => {
+            if(err) return res.send(err.sqlMessage)
+
+            res.send(result)
+        })
+    })
 
 
 module.exports = router
