@@ -181,5 +181,17 @@ router.delete('/deleteimage/:productid', (req,res) => {
 })
 
 
+// Retrieve products for home
+router.get('/home', (req, res) => {
+    const sql = `select * from products order by id desc limit 3`
+
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        res.send(result)
+    })
+})
+
+
 
 module.exports = router
