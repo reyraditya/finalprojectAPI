@@ -181,9 +181,20 @@ router.delete('/deleteimage/:productid', (req,res) => {
 })
 
 
-// Retrieve products for home
-router.get('/home', (req, res) => {
-    const sql = `select * from products order by id desc limit 3`
+// Retrieve products for home women
+router.get('/homewomen', (req, res) => {
+    const sql = `select * from products where gender = 'women' order by id desc limit 3`
+
+    conn.query(sql, (err, result) => {
+        if(err) return res.send(err.sqlMessage)
+
+        res.send(result)
+    })
+})
+
+// Retrieve products from home men
+router.get('/homemen', (req, res) => {
+    const sql = `select * from products where gender = 'men' order by id desc limit 3`
 
     conn.query(sql, (err, result) => {
         if(err) return res.send(err.sqlMessage)
